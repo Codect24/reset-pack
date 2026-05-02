@@ -1,0 +1,29 @@
+{
+  "_comment": "IDs winget. Vérifier avec: winget search <nom>",
+  "apps": [
+    { "id": "Brave.Brave",                  "name": "Brave Browser" },
+    { "id": "7zip.7zip",                    "name": "7-Zip" },
+    { "id": "voidtools.Everything",         "name": "Everything" },
+    { "id": "Git.Git",                      "name": "Git" },
+    { "id": "GitHub.cli",                   "name": "GitHub CLI" },
+    { "id": "Obsidian.Obsidian",            "name": "Obsidian" },
+    { "id": "OpenWhisperSystems.Signal",    "name": "Signal" },
+    { "id": "Valve.Steam",                  "name": "Steam" },
+    { "id": "Discord.Discord",              "name": "Discord" },
+    { "id": "VideoLAN.VLC",                 "name": "VLC" },
+    { "id": "Python.Python.3.12",           "name": "Python 3.12" },
+    { "id": "Microsoft.PowerToys",          "name": "PowerToys" },
+    { "id": "Microsoft.VisualStudioCode",   "name": "VSCode" },
+    { "id": "Anthropic.Claude",             "name": "Claude Desktop" },
+    { "id": "Docker.DockerDesktop",         "name": "Docker Desktop" },
+    { "id": "Microsoft.WindowsTerminal",    "name": "Windows Terminal" },
+    { "id": "Microsoft.PowerShell",         "name": "PowerShell 7 (pwsh)" },
+    { "id": "OpenJS.NodeJS.LTS",            "name": "Node.js LTS (pour Claude Code)" },
+    { "id": "RiotGames.LeagueOfLegends.EUW","name": "League of Legends (EUW)" },
+    { "id": "Blizzard.BattleNet",           "name": "Battle.net",
+      "extraArgs": ["--location", "C:\\Program Files (x86)\\Battle.net"] }
+  ],
+  "_manual": [
+    "Microsoft 365 Apps : install via https://account.microsoft.com (winget ID Microsoft.Office veut un config XML ODT)"
+  ]
+}
