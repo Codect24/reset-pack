@@ -44,6 +44,16 @@ Try-Tweak "Silent installed apps off"              { Set-RegistryValue -Path $co
 
 Try-Tweak "Win+V (clipboard history) on"           { Set-RegistryValue -Path 'HKCU:\Software\Microsoft\Clipboard' -Name 'EnableClipboardHistory' -Value 1 }
 
+# === GAME BAR / DVR (vire le popup 'ms-gamingoverlay' apres debloat Xbox) ===
+Try-Tweak "Game DVR off (HKCU)"                    { Set-RegistryValue -Path 'HKCU:\System\GameConfigStore' -Name 'GameDVR_Enabled' -Value 0 }
+Try-Tweak "Game DVR off (HKLM policy)"             { Set-RegistryValue -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR' -Name 'AllowGameDVR' -Value 0 }
+$gb = 'HKCU:\Software\Microsoft\GameBar'
+Try-Tweak "Game Bar - AppCapture off"              { Set-RegistryValue -Path $gb -Name 'AppCaptureEnabled' -Value 0 }
+Try-Tweak "Game Bar - Nexus off"                   { Set-RegistryValue -Path $gb -Name 'UseNexusForGameBarEnabled' -Value 0 }
+Try-Tweak "Game Bar - Startup panel off"           { Set-RegistryValue -Path $gb -Name 'ShowStartupPanel' -Value 0 }
+Try-Tweak "Game Bar - Startup tip dismiss"         { Set-RegistryValue -Path $gb -Name 'GamePanelStartupTipIndex' -Value 3 }
+Try-Tweak "Game Bar - AutoGameMode off"            { Set-RegistryValue -Path $gb -Name 'AutoGameModeEnabled' -Value 0 }
+
 # === RESTART EXPLORER pour appliquer ===
 Try-Tweak "Restart explorer.exe" {
     Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
