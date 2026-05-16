@@ -16,6 +16,7 @@ Try-Tweak "Afficher fichiers caches"               { Set-RegistryValue -Path $ex
 Try-Tweak "Desactiver widgets taskbar"             { Set-RegistryValue -Path $exp -Name 'TaskbarDa' -Value 0 }
 Try-Tweak "Desactiver Copilot taskbar (HKCU)"      { Set-RegistryValue -Path $exp -Name 'ShowCopilotButton' -Value 0 }
 Try-Tweak "Desactiver Copilot (policy HKCU)"       { Set-RegistryValue -Path 'HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot' -Name 'TurnOffWindowsCopilot' -Value 1 }
+Try-Tweak "Activer 'Fin de tache' clic droit taskbar" { Set-RegistryValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings' -Name 'TaskbarEndTask' -Value 1 }
 
 # === MENU CONTEXTUEL CLASSIQUE (Win11) ===
 Try-Tweak "Menu contextuel classique" {
