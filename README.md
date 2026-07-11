@@ -45,7 +45,7 @@ Pour ne lancer qu'un module :
 | 08-debloat | Vire Cortana + apps préinstallées (garde OneDrive) |
 | 09-games | Symlinks Saved Games + My Games + LoL/Overwatch/Dofus |
 | 10-scheduled | Tâche `winget upgrade --all` hebdo + dark/light auto (7h↔20h) |
-| 11-finalize | Pin taskbar (Brave/Explorer/Terminal/Claude), hosts file blocage pubs, ouvre Brave Sync |
+| 11-finalize | Pin taskbar (Brave/Explorer/Terminal/Claude), Storage Sense, ouvre Brave Sync (blocage pubs délégué à Brave Shields + DNS filtrant) |
 
 ## Notes importantes
 

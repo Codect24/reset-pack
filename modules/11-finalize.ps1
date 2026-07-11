@@ -1,21 +1,19 @@
 ﻿# Finalize : pin taskbar, hosts file blocage pubs, ouvre Brave Sync
 . "$PSScriptRoot\00-helpers.ps1"
 
-# === HOSTS FILE - blocage pubs (StevenBlack) ===
-Write-Step "Hosts file : blocage pubs (StevenBlack)"
-$hostsBackup = "$env:WINDIR\System32\drivers\etc\hosts.before-resetpack"
-$hostsTarget = "$env:WINDIR\System32\drivers\etc\hosts"
-if (-not (Test-Path $hostsBackup)) {
-    Copy-Item $hostsTarget $hostsBackup -Force
-    Write-Ok "Backup hosts -> $hostsBackup"
-}
-try {
-    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts' -OutFile $hostsTarget -UseBasicParsing
-    Write-Ok "Hosts file mis à jour (~200k entrées)"
-    ipconfig /flushdns | Out-Null
-} catch {
-    Write-Warn "Échec DL hosts : $_"
-}
+# === BLOCAGE PUBS ===
+# NOTE : on n'installe PLUS de hosts file anti-pub type StevenBlack.
+# Un hosts de ~83k entrees (2.4 Mo) est memory-mappe par le service DNS Client
+# (Dnscache, non-stoppable) au boot -> parsing O(n), NlaSvc reste bloque, et le
+# reseau met 15-20 min a devenir dispo au demarrage. Le fichier reste aussi
+# verrouille en ecriture tant que Dnscache le mappe. Bug vecu (incident 2026-07).
+# A la place :
+#   - Brave Shields bloque pubs + trackers nativement dans le navigateur (notre defaut)
+#   - Blocage system-wide sans penalite : DNS filtrant au niveau adaptateur/routeur
+#     (Cloudflare 1.1.1.2 malware / 1.1.1.3 familles, ou NextDNS)
+# Si un hosts file custom est vraiment souhaite, le garder SOUS ~135 Ko
+# (limite molle au-dela de laquelle Dnscache degrade fortement les perfs).
+Write-Step "Blocage pubs : delegue a Brave Shields + DNS filtrant (pas de hosts file, cf. note)"
 
 # === PIN TASKBAR ===
 # Win11 a verrouillé la modif de la taskbar via API. Approche : Syspin (tiers) ou XML start layout.
