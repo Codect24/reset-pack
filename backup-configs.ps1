@@ -8,7 +8,7 @@ $DEST = $script:ConfigsRoot
 Write-Banner "BACKUP CONFIGS -> $DEST"
 
 # Crée la structure
-$dirs = @('Git', 'Claude-Code\.claude', 'Claude-Desktop', 'Windsurf', 'WindowsTerminal', 'PowerToys', 'Obsidian')
+$dirs = @('Git', 'Claude-Code\.claude', 'Claude-Desktop', 'VSCode', 'Windsurf', 'WindowsTerminal', 'PowerToys', 'Obsidian')
 foreach ($d in $dirs) {
     New-Item -ItemType Directory -Force -Path "$DEST\$d" | Out-Null
 }
@@ -56,6 +56,16 @@ if (Test-Path "$env:APPDATA\Windsurf\User\snippets") {
     }
     Copy-Item "$env:APPDATA\Windsurf\User\snippets" "$DEST\Windsurf\snippets" -Recurse -Force
     Write-Ok "Backup dir: Windsurf/snippets"
+}
+
+# === VSCode (settings + keybindings + snippets) ===
+$codeUser = "$env:APPDATA\Code\User"
+Backup-File "$codeUser\settings.json"    "$DEST\VSCode\settings.json"
+Backup-File "$codeUser\keybindings.json" "$DEST\VSCode\keybindings.json"
+if (Test-Path "$codeUser\snippets") {
+    if (Test-Path "$DEST\VSCode\snippets") { Remove-Item "$DEST\VSCode\snippets" -Recurse -Force }
+    Copy-Item "$codeUser\snippets" "$DEST\VSCode\snippets" -Recurse -Force
+    Write-Ok "Backup dir: VSCode/snippets"
 }
 
 # === Windows Terminal ===

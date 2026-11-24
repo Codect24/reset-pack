@@ -1,6 +1,9 @@
 ﻿# Dev setup : WSL2 Ubuntu, long paths, Git config, gh auth
 . "$PSScriptRoot\00-helpers.ps1"
 
+# wsl/dism/git/gh/msiexec sont des mutations brutes (hors wrappers) -> rien en dry-run.
+if ($script:DryRun) { Write-Dry "dev-setup : long paths + WSL2 Ubuntu + git config + gh auth (simulation)"; Write-Ok "Dev setup OK (dry)"; return }
+
 # --- Long paths ---
 Write-Step "Activer long paths Windows (>260 char)"
 Set-RegistryValue -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
@@ -49,12 +52,13 @@ function Repair-WslViaMsi {
     }
 }
 
-# Etape 1 : WSL deja actif ?
+# Etape 1 : WSL deja actif ? On se base sur le CODE DE SORTIE (pas une chaine localisee FR).
+$env:WSL_UTF8 = '1'   # force la sortie wsl en UTF-8 (sinon UTF-16 + 'par defaut' en FR -> match rate)
 $wslReady = $false
 try {
-    $status = wsl --status 2>&1
-    if ($LASTEXITCODE -eq 0 -and "$status" -match 'Default') { $wslReady = $true }
-} catch {}
+    wsl --status *> $null
+    if ($LASTEXITCODE -eq 0) { $wslReady = $true }
+} catch { Write-Warn "wsl --status indisponible : $($_.Exception.Message)" }
 
 if ($wslReady) {
     Write-Ok "WSL deja actif"
@@ -124,6 +128,9 @@ if (Test-CommandExists gh) {
         # gh auth status retourne exit 1 quand pas logge - on regarde juste le texte
         if ("$authStatus" -match 'Logged in to github.com') {
             Write-Ok "Deja logge sur GitHub"
+        } elseif ($script:Auto) {
+            Write-Warn "Mode AUTO : 'gh auth login' interactif saute (il bloquerait le run)."
+            Write-Warn "A faire a la main : gh auth login --git-protocol ssh --web --hostname github.com"
         } else {
             Write-Warn "Le navigateur va s'ouvrir pour login GitHub. Choisis 'SSH' comme protocole, et 'Login with a web browser'."
             gh auth login --git-protocol ssh --web --hostname github.com

@@ -19,9 +19,10 @@ function gco { git checkout $args }
 function code-here { code . }
 function explorer-here { explorer . }
 
-# Fast nav vers projets
-function proj { Set-Location "$env:USERPROFILE\OneDrive\Documents\03_Projets_Code" }
-function reset-pack { Set-Location "$env:USERPROFILE\OneDrive\Documents\03_Projets_Code\2026\Reset_pack" }
+# Fast nav vers projets (OneDrive dynamique : marche même si déplacé sur D:)
+$OneDriveRoot = if ($env:OneDrive) { $env:OneDrive } else { "$env:USERPROFILE\OneDrive" }
+function proj { Set-Location "$OneDriveRoot\Documents\03_Projets_Code" }
+function reset-pack { Set-Location "$OneDriveRoot\Documents\03_Projets_Code\2026\Reset_pack" }
 
 # Prompt minimal avec git branch
 function prompt {

@@ -1,6 +1,9 @@
 ﻿# Vire Cortana + apps preinstallees (GARDE OneDrive)
 . "$PSScriptRoot\00-helpers.ps1"
 
+# IMPORTANT : Remove-AppxPackage est irréversible -> on NE fait RIEN en dry-run.
+if ($script:DryRun) { Write-Dry "debloat : désinstalle les apps préinstallées (simulation, rien supprimé)"; Write-Ok "Debloat OK (dry)"; return }
+
 # Apps a virer
 $bloat = @(
     'Microsoft.549981C3F5F10'                          # Cortana (proteged sur Win11 23H2+, peut echouer)

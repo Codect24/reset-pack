@@ -2,13 +2,16 @@
 . "$PSScriptRoot\00-helpers.ps1"
 
 if (-not (Test-Path $script:ConfigsRoot)) {
-    throw "Configs introuvables : $script:ConfigsRoot - attends que OneDrive sync."
+    if ($script:DryRun) { Write-Dry "Configs absent ($script:ConfigsRoot) - en réel on attendrait la sync OneDrive" }
+    else { throw "Configs introuvables : $script:ConfigsRoot - attends que OneDrive sync." }
 }
 
 # Tuer les apps qui verrouillent leurs fichiers de config avant de creer les symlinks
 # PowerToys 0.99+ lance CmdPal (Command Palette) qui tient ses logs ouverts.
 # CmdPal a un nom different (Microsoft.CmdPal.UI / Microsoft.CmdPal.Ext.PowerToys)
 # donc on chasse aussi par chemin d'install.
+# (sauté en dry-run : on ne tue aucune app ni ne désactive de tâche en simulation)
+if (-not $script:DryRun) {
 $procPatterns = @('PowerToys*', 'obsidian*', 'Claude*', 'Microsoft.CmdPal*')
 foreach ($pat in $procPatterns) {
     $procs = Get-Process -Name $pat -ErrorAction SilentlyContinue
@@ -33,6 +36,7 @@ if ($pathProcs) {
 $ptTasks = Get-ScheduledTask -TaskName "PowerToys*" -ErrorAction SilentlyContinue
 if ($ptTasks) { $ptTasks | Disable-ScheduledTask -ErrorAction SilentlyContinue | Out-Null }
 Start-Sleep -Seconds 3
+}  # fin if (-not DryRun) : kill process + désactivation autorun
 
 # Map : ConfigsRoot subfolder -> destination réelle
 $wtPkg = Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory | Where-Object { $_.Name -like 'Microsoft.WindowsTerminal_*' } | Select-Object -First 1

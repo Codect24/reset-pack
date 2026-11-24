@@ -30,14 +30,17 @@ Write-Step "Activer Storage Sense (nettoyage auto)"
 $ss = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy'
 Set-RegistryValue -Path $ss -Name '01' -Value 1            # Storage Sense ON
 Set-RegistryValue -Path $ss -Name '04' -Value 1            # Vider corbeille
-Set-RegistryValue -Path $ss -Name '256' -Value 30          # > 30 jours
-Set-RegistryValue -Path $ss -Name '08' -Value 1            # Vider Downloads
-Set-RegistryValue -Path $ss -Name '32' -Value 30
-Set-RegistryValue -Path $ss -Name '2048' -Value 1          # Lance hebdo
+Set-RegistryValue -Path $ss -Name '256' -Value 30          # corbeille : > 30 jours
+# IMPORTANT : NE PAS purger Downloads automatiquement (perte de données silencieuse).
+Set-RegistryValue -Path $ss -Name '08' -Value 0            # Downloads : NE PAS vider
+Set-RegistryValue -Path $ss -Name '2048' -Value 7          # cadence : 7 = hebdomadaire (1 = quotidien)
+Write-Warn "Note: les valeurs StoragePolicy sont fragiles selon le build ; vérifie dans Paramètres > Stockage > Storage Sense."
 
 # === OUVRIR BRAVE SYNC ===
 Write-Step "Ouverture Brave Sync (colle ton code depuis ton autre device)"
-if (Test-Path "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\Application\brave.exe") {
+if ($script:DryRun) {
+    Write-Dry "ouvrir brave://settings/braveSync"
+} elseif (Test-Path "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\Application\brave.exe") {
     Start-Process "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\Application\brave.exe" -ArgumentList 'brave://settings/braveSync'
 } elseif (Test-Path "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe") {
     Start-Process "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe" -ArgumentList 'brave://settings/braveSync'

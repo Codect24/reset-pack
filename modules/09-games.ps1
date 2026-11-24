@@ -1,7 +1,7 @@
 ﻿# Symlinks sauvegardes jeux : Saved Games + My Games + LoL/Overwatch/Dofus
 . "$PSScriptRoot\00-helpers.ps1"
 
-$gamingRoot = "$env:USERPROFILE\OneDrive\Documents\07_Gaming"
+$gamingRoot = $script:GamingRoot   # racine OneDrive dynamique (marche si OneDrive sur D:)
 if (-not (Test-Path $gamingRoot)) {
     Write-Warn "$gamingRoot introuvable - skip games"
     return
@@ -17,7 +17,8 @@ $generic = @(
 
 foreach ($g in $generic) {
     if (-not (Test-Path $g.Target)) {
-        New-Item -ItemType Directory -Force -Path $g.Target | Out-Null
+        if ($script:DryRun) { Write-Dry "mkdir $($g.Target)" }
+        else { New-Item -ItemType Directory -Force -Path $g.Target | Out-Null }
     }
     New-SymLinkSafe -Link $g.Link -Target $g.Target | Out-Null
 }

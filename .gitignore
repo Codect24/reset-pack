@@ -13,3 +13,7 @@ $RECYCLE.BIN/
 *.log
 *.tmp
 *.bak
+
+# Reset Pack runtime
+logs/
+.state

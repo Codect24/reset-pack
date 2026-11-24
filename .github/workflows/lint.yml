@@ -1,0 +1,39 @@
+name: lint
+
+on: [push, pull_request]
+
+jobs:
+  analyze:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse AST (syntaxe)
+        shell: powershell
+        run: |
+          $ok = $true
+          Get-ChildItem -Recurse -Filter *.ps1 | Where-Object { $_.FullName -notmatch '\\logs\\' } | ForEach-Object {
+            $e = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$e) | Out-Null
+            if ($e) { $ok = $false; Write-Host "SYNTAX KO $($_.Name)"; $e.Message | ForEach-Object { "   $_" } }
+          }
+          if (-not $ok) { exit 1 }
+
+      - name: PSScriptAnalyzer
+        shell: powershell
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $r = Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning,Error
+          $r | Format-Table -AutoSize
+          if ($r.Severity -contains 'Error') { exit 1 }
+
+      - name: Pester
+        shell: powershell
+        run: |
+          Install-Module Pester -MinimumVersion 5.5.0 -Force -Scope CurrentUser -SkipPublisherCheck
+          Import-Module Pester
+          $c = New-PesterConfiguration
+          $c.Run.Path = './tests'
+          $c.Output.Verbosity = 'Detailed'
+          $c.Run.Exit = $true
+          Invoke-Pester -Configuration $c

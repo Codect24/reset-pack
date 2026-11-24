@@ -2,6 +2,8 @@
 # Source : https://github.com/DanysysTeam/PS-SFTA (MIT)
 . "$PSScriptRoot\00-helpers.ps1"
 
+if ($script:DryRun) { Write-Dry "apps par défaut (skip en dry-run)"; Write-Ok "Defaults OK (dry)"; return }
+
 # Telecharge PS-SFTA si pas deja en cache
 $sftaPs1 = "$script:DownloadDir\SFTA.ps1"
 if (-not (Test-Path $sftaPs1)) {
@@ -18,13 +20,18 @@ if (-not (Test-Path $sftaPs1)) {
 # Charge les fonctions Set-FTA / Set-PTA dans la session
 . $sftaPs1
 
-# (extension, ProgID) - les ProgIDs sont fournis par les apps installees
+function Test-ProgId($ProgId) {
+    # Le ProgID doit EXISTER (enregistré par l'app) sinon on casse l'association.
+    return (Test-Path "Registry::HKEY_CLASSES_ROOT\$ProgId")
+}
+
+# (extension, ProgID) - ProgIDs fournis par les apps installées. Appliqué SEULEMENT si le ProgID existe.
+# NB : Brave utilise 'BraveHTML' pour html/http ; le PDF a un ProgID distinct (souvent 'BravePDF')
+# qui n'existe que si Brave est installé -> la garde Test-ProgId évite de casser .pdf.
 $ftaMappings = @(
     @{ Ext='.htm';  Prog='BraveHTML' }
     @{ Ext='.html'; Prog='BraveHTML' }
-    @{ Ext='.pdf';  Prog='BraveHTML' }
-    @{ Ext='.svg';  Prog='BraveHTML' }
-    @{ Ext='.webp'; Prog='BraveHTML' }
+    @{ Ext='.pdf';  Prog='BravePDF' }
 
     @{ Ext='.mp4';  Prog='VLC.mp4' }
     @{ Ext='.mkv';  Prog='VLC.mkv' }
@@ -39,22 +46,16 @@ $ftaMappings = @(
 )
 
 foreach ($m in $ftaMappings) {
+    if (-not (Test-ProgId $m.Prog)) { Write-Warn "ProgID absent -> skip $($m.Ext) ($($m.Prog))"; continue }
     Write-Step "$($m.Ext) -> $($m.Prog)"
-    try {
-        Set-FTA $m.Prog $m.Ext
-    } catch {
-        Write-Warn "Skip $($m.Ext) : $($_.Exception.Message)"
-    }
+    try { Set-FTA $m.Prog $m.Ext } catch { Write-Warn "Skip $($m.Ext) : $($_.Exception.Message)" }
 }
 
 # Protocoles (http/https) -> Brave
 foreach ($proto in 'http','https') {
+    if (-not (Test-ProgId 'BraveHTML')) { Write-Warn "BraveHTML absent -> skip $proto (Brave pas installé ?)"; continue }
     Write-Step "$proto -> BraveHTML"
-    try {
-        Set-PTA BraveHTML $proto
-    } catch {
-        Write-Warn "Skip $proto : $($_.Exception.Message)"
-    }
+    try { Set-PTA BraveHTML $proto } catch { Write-Warn "Skip $proto : $($_.Exception.Message)" }
 }
 
 Write-Ok "Defaults OK (verifier dans Settings > Apps > Default apps)"

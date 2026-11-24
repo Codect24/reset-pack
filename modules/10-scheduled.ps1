@@ -8,7 +8,7 @@ $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfil
 $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 2pm
 $principal = New-ScheduledTaskPrincipal -UserId "$env:USERNAME" -LogonType Interactive -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Hours 2)
-Register-ScheduledTask -TaskName $wingetTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+Register-ScheduledTaskSafe -Params @{ TaskName=$wingetTask; Action=$action; Trigger=$trigger; Principal=$principal; Settings=$settings }
 Write-Ok "Tâche winget hebdo créée"
 
 # === 2. Dark mode auto (clair 7h, sombre 20h) ===
@@ -19,16 +19,20 @@ $darkCmd = '-NoProfile -WindowStyle Hidden -Command "Set-ItemProperty -Path HKCU
 
 $lightAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $lightCmd
 $lightTrigger = New-ScheduledTaskTrigger -Daily -At 7am
-Register-ScheduledTask -TaskName 'ResetPack-LightMode' -Action $lightAction -Trigger $lightTrigger -Principal $principal -Settings $settings -Force | Out-Null
+Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-LightMode'; Action=$lightAction; Trigger=$lightTrigger; Principal=$principal; Settings=$settings }
 
 $darkAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $darkCmd
 $darkTrigger = New-ScheduledTaskTrigger -Daily -At 8pm
-Register-ScheduledTask -TaskName 'ResetPack-DarkMode' -Action $darkAction -Trigger $darkTrigger -Principal $principal -Settings $settings -Force | Out-Null
+Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-DarkMode'; Action=$darkAction; Trigger=$darkTrigger; Principal=$principal; Settings=$settings }
 
 Write-Ok "Tâches dark/light créées"
 
 # === 3. Désactiver apps de merde au startup ===
-Write-Step "Désactiver apps inutiles au startup"
+# NOTE : ces entrées (Discord/Spotify/Steam/Teams/Epic) ne sont créées qu'au 1er lancement
+# de chaque app. Sur une machine fraîche elles n'existent pas encore -> ce bloc ne désarme
+# que ce qui est déjà présent (utile en re-run / usage courant, quasi no-op juste après reset).
+Write-Step "Désactiver apps inutiles au startup (si déjà présentes)"
+if ($script:DryRun) { Write-Dry "désactivation startup (skip en dry-run)"; Write-Ok "Scheduled OK"; return }
 $startupBlock = @(
     'OneDriveSetup'      # le vrai OneDrive reste, c'est juste le setup résiduel
     'com.squirrel.Teams.Teams'

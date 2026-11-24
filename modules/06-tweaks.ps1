@@ -20,6 +20,7 @@ Try-Tweak "Activer 'Fin de tache' clic droit taskbar" { Set-RegistryValue -Path 
 
 # === MENU CONTEXTUEL CLASSIQUE (Win11) ===
 Try-Tweak "Menu contextuel classique" {
+    if ($script:DryRun) { Write-Dry "menu contextuel classique"; return }
     $ctxKey = 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32'
     if (-not (Test-Path $ctxKey)) { New-Item -Path $ctxKey -Force | Out-Null }
     Set-ItemProperty -Path $ctxKey -Name '(Default)' -Value '' -Force
@@ -56,6 +57,7 @@ Try-Tweak "Game Bar - AutoGameMode off"            { Set-RegistryValue -Path $gb
 
 # === RESTART EXPLORER pour appliquer ===
 Try-Tweak "Restart explorer.exe" {
+    if ($script:DryRun) { Write-Dry "restart explorer.exe"; return }
     Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
     Start-Process explorer.exe
