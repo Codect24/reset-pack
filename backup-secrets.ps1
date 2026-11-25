@@ -21,16 +21,30 @@ if (Test-Path "$env:USERPROFILE\.ssh") {
 } else { Write-Warn "Pas de ~/.ssh" }
 
 # 2. Fichiers .env des projets (MCP maison atlas / tom-lefrere + autres)
-$codeRoot = Join-Path $script:OneDriveRoot 'Documents\03_Projets_Code'
+# TOUTES les racines connues (PROJETS_CODE + ancienne OneDrive) : un projet déplacé reste couvert.
 $envDir = Join-Path $stage 'env-files'
 New-Item -ItemType Directory -Force -Path $envDir | Out-Null
-if (Test-Path $codeRoot) {
-    Get-ChildItem $codeRoot -Recurse -Force -Include '.env', '*.env' -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch '\\node_modules\\' } | ForEach-Object {
+$roots = Get-ProjetsRoots
+if (-not $roots) { Write-Warn "Aucune racine de projets trouvée (PROJETS_CODE / OneDrive\Documents\03_Projets_Code)." }
+foreach ($codeRoot in $roots) {
+    $tag = ($codeRoot -replace '[:\\/ ]+', '_').Trim('_')
+    Get-ChildItem $codeRoot -Recurse -Force -Include '.env', '*.env', '.env.*' -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notmatch '\\(node_modules|\.venv|\.git)\\' -and $_.Name -notmatch '\.(example|sample|template)$' } |
+        ForEach-Object {
             $rel = $_.FullName.Substring($codeRoot.Length).TrimStart('\') -replace '[\\/]', '__'
-            Copy-Item $_.FullName (Join-Path $envDir $rel) -Force
+            Copy-Item $_.FullName (Join-Path $envDir "$tag==$rel") -Force
         }
-    Write-Ok ".env -> env-files"
+    Write-Ok ".env de $codeRoot -> env-files"
+}
+
+# 2b. Sunshine (OMEN) : hash du mot de passe WebUI, clients appairés, clé privée -> archive chiffrée, jamais OneDrive
+$sun = Join-Path $env:ProgramFiles 'Sunshine\config'
+foreach ($s in @('sunshine_state.json', 'credentials')) {
+    $p = Join-Path $sun $s
+    if (Test-Path $p) {
+        try { Copy-Item $p (Join-Path $stage "sunshine-$s") -Recurse -Force -ErrorAction Stop; Write-Ok "Sunshine $s -> archive" }
+        catch { Write-Warn "Sunshine $s illisible (lance en admin) : $($_.Exception.Message)" }
+    }
 }
 
 # 3. Variables d'env user susceptibles de contenir des secrets (clés API wavespeed/atlas...)

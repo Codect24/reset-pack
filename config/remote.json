@@ -1,0 +1,70 @@
+{
+  "_comment": "Acces distant de l'OMEN (cf. SYSTEME-OMEN-35L.md §7), lu par modules/17-remote.ps1. AUCUN secret ici : ni mot de passe Sunshine, ni authkey Tailscale. Jetons : {Tools} = layout.tools du profil (C:\\Tools sur l'OMEN), {ProgramFiles} = %ProgramFiles%.",
+  "hostProfile": "omen",
+
+  "keepMonitor": "primary",
+  "_keepMonitor": "Ecran capte par Sunshine : il n'est JAMAIS desactive. 'primary' (defaut : Sunshine capte l'ecran principal quand output_name est vide) ou bien le 'Monitor Serial Number' ou le 'Monitor ID' complet lu dans MultiMonitorTool /scomma. Jamais \\\\.\\DISPLAYn : ces numeros bougent.",
+
+  "multiMonitorTool": {
+    "url": "https://www.nirsoft.net/utils/multimonitortool-x64.zip",
+    "dir": "{Tools}\\MultiMonitorTool",
+    "exe": "MultiMonitorTool.exe",
+    "requireSignature": true,
+    "ini": {
+      "LoadConfigUseMonitorID": "1",
+      "HideInactiveMonitors": "0"
+    },
+    "_ini": "Cles ecrites dans MultiMonitorTool.cfg [General] : /LoadConfig retrouve les ecrans par Monitor ID (pas par \\\\.\\DISPLAYn) et les ecrans desactives restent listes."
+  },
+
+  "scriptsDir": "{Tools}\\remote",
+  "monoEcran": {
+    "settleMs": 1500,
+    "timeoutSec": 20
+  },
+
+  "sunshine": {
+    "installDirs": ["{ProgramFiles}\\Sunshine"],
+    "exe": "sunshine.exe",
+    "conf": "config\\sunshine.conf",
+    "service": "SunshineService",
+    "restartAfterChange": true,
+    "basePort": 47989,
+    "tcpOffsets": [-5, 0, 1, 21],
+    "udpOffsets": [9, 10, 11, 13, 21],
+    "_ports": "Ports = basePort (ou 'port' de sunshine.conf) + offset. TCP 47984 HTTPS, 47989 HTTP, 47990 WebUI, 48010 RTSP. UDP 47998 video, 47999 controle, 48000 audio (src/stream.h) + 48002/48010 listes par la doc historique. Tous limites a Tailscale.",
+    "enforce": {
+      "upnp": "disabled"
+    },
+    "_enforce": "Valeurs imposees dans sunshine.conf. upnp=disabled : Sunshine ne doit JAMAIS ouvrir de port sur la Livebox. origin_web_ui_allowed=wan est en plus toujours ramene a lan."
+  },
+
+  "firewall": {
+    "rulePrefix": "ResetPack-",
+    "installerRuleDisplayNames": ["Sunshine*"],
+    "_installer": "Regles larges creees par l'installeur Sunshine (DisplayName 'Sunshine', TCP+UDP, toute adresse) : desactivees, remplacees par ResetPack-Sunshine-TCP/UDP limitees a Tailscale. Une mise a jour de Sunshine peut les recreer : relancer -Only remote."
+  },
+
+  "tailscale": {
+    "ipv4": "100.64.0.0/10",
+    "ipv6": "fd7a:115c:a1e0::/48",
+    "cli": "{ProgramFiles}\\Tailscale\\tailscale.exe"
+  },
+
+  "tasks": {
+    "rescue": "ResetPack-ReactiverEcrans",
+    "on": "ResetPack-MonoEcranOn",
+    "off": "ResetPack-MonoEcranOff"
+  },
+
+  "power": {
+    "standby-timeout-ac": 0,
+    "hibernate-timeout-ac": 0
+  },
+
+  "client": {
+    "moonlightWingetId": "MoonlightGameStreamingProject.Moonlight",
+    "tailscaleWingetId": "Tailscale.Tailscale",
+    "parsecWingetId": "Parsec.Parsec"
+  }
+}

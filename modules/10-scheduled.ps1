@@ -27,6 +27,32 @@ Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-DarkMode'; Action=$dar
 
 Write-Ok "Tâches dark/light créées"
 
+# === 2b. Bundles git quotidiens 13h (copie n°2 du code, cf. backup-bundles.ps1) ===
+Write-Step "Tâche : bundles git quotidiens (13h)"
+$bundleScript = Join-Path $script:Root 'backup-bundles.ps1'
+$bundleAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$bundleScript`" -Quiet"
+$bundleTrigger = New-ScheduledTaskTrigger -Daily -At 1pm
+Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-CodeBundles'; Action=$bundleAction; Trigger=$bundleTrigger; Principal=$principal; Settings=$settings }
+Write-Ok "Tâche bundles créée (log : %LOCALAPPDATA%\ResetPack\bundles.log)"
+
+if ((Get-ResetProfile) -eq 'omen') {
+    # === 2c. Docker : purge LÉGÈRE hebdo (images orphelines + cache de build > 30 j ; jamais conteneurs ni volumes) ===
+    Write-Step "Tâche : purge Docker légère (dim. 15h)"
+    $dockerCmd = '-NoProfile -WindowStyle Hidden -Command "if (Get-Command docker -ErrorAction SilentlyContinue) { docker image prune -f; docker builder prune -f --filter until=720h }"'
+    $dockerAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $dockerCmd
+    $dockerTrigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3pm
+    Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-DockerPrune'; Action=$dockerAction; Trigger=$dockerTrigger; Principal=$principal; Settings=$settings }
+
+    # === 2d. Log thermique la 1re SEMAINE (TX401 sous l'échappement du RTX 5080, runs DL longs) ===
+    Write-Step "Tâche : log thermique toutes les 5 min pendant 7 jours"
+    $thermalScript = Join-Path $script:Root 'scripts\thermal-log.ps1'
+    $thermalAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$thermalScript`""
+    $thermalTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 7)
+    $thermalSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 2)
+    Register-ScheduledTaskSafe -Params @{ TaskName='ResetPack-ThermalLog'; Action=$thermalAction; Trigger=$thermalTrigger; Principal=$principal; Settings=$thermalSettings }
+    Write-Ok "Tâches Docker + thermique créées (log : %LOCALAPPDATA%\ResetPack\thermal)"
+}
+
 # === 3. Désactiver apps de merde au startup ===
 # NOTE : ces entrées (Discord/Spotify/Steam/Teams/Epic) ne sont créées qu'au 1er lancement
 # de chaque app. Sur une machine fraîche elles n'existent pas encore -> ce bloc ne désarme

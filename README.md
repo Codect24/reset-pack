@@ -4,6 +4,26 @@ Automatise la réinstallation complète d'un PC Windows 11 après reset (machine
 
 > Audit machine + plan de tri 2 disques : voir **[AUDIT-RESET-2026.md](AUDIT-RESET-2026.md)**.
 
+## Nouveau PC : HP OMEN 35L (profil `omen`)
+
+L'image usine HP est **conservée** (pas de reset). Toutes les étapes sont dans **[OMEN-JOUR-J.md](OMEN-JOUR-J.md)**, et le
+pourquoi de chaque choix dans [SYSTEME-OMEN-35L.md](SYSTEME-OMEN-35L.md).
+
+```powershell
+.\format-ssd-jeux.ps1 -DryRun          # efface + formate le Crucial P310 en D: "Jeux" (garde-fous + confirmation tapée)
+.\reset.ps1 -Profile omen -DryRun      # profil : liste ET ordre imposés, jamais debloat ni drivers
+.\migrate-projets.ps1 -DryRun          # projets -> C:\Dev\03_Projets_Code (clone GitHub / bundles)
+.\verify-omen.ps1                      # test d'acceptation (lecture seule)
+```
+
+| Fichier | Rôle |
+|---|---|
+| `config/storage-layout.json` | **source unique des chemins** par machine (C:/D:/X:, variables d'env, launchers) |
+| `config/profiles.json` | modules + ordre + interdits de chaque profil |
+| `modules/12-storage` … `17-remote` | stockage, code, deep learning, tri HP, jeu, accès distant |
+| `backup-bundles.ps1` | `git bundle` quotidien de chaque dépôt → OneDrive (tâche 13h) |
+| `backup-datasets.ps1` | datasets/runs DL + export WSL → SSD externe `X:` |
+
 ## Démarrage ultra-rapide (machine fraîchement resetée)
 
 OneDrive (donc le pack) n'existe pas encore juste après un reset. Une seule ligne dans **PowerShell** amorce tout (installe winget + git, clone depuis GitHub dans `C:\ResetPack`, lance le pack) :

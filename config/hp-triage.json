@@ -1,0 +1,71 @@
+{
+  "_comment": "Tri du bloatware HP de l'OMEN 35L (module 15-hp-triage, cf. SYSTEME-OMEN-35L.md §6). Listes EXPLICITES, rien d'aveugle. 'pattern' = joker PowerShell (-like, insensible a la casse) teste sur : appx -> Name / PackageFamilyName / PackageFullName (et DisplayName / PackageName du provisioned) ; win32 -> DisplayName (et nom de la cle Uninstall). 'keep' = garde-fou verifie AVANT toute suppression, quel que soit le type : un candidat qui matche 'keep' n'est jamais retire. 'confirm' = retire seulement sur un oui interactif (jamais en Auto ni en dry-run). 'examples' = noms reels attendus, utilises par les tests Pester. Noms exacts a revalider sur la 1re capture (logs\\hp-capture-*).",
+  "uninstallTimeoutSec": 900,
+  "keep": [
+    { "name": "OMEN Gaming Hub / OMEN Command Center", "type": "appx",  "pattern": "AD2F1837.OMEN*",                     "examples": ["AD2F1837.OMENCommandCenter", "AD2F1837.OMENCommandCenter_v10z8vjag6ke6"] },
+    { "name": "OMEN Gaming Hub (composants Win32)",    "type": "win32", "pattern": "OMEN*",                              "examples": ["OMEN Gaming Hub", "OMEN Light Studio"] },
+    { "name": "OMEN Gaming Hub (composants Win32)",    "type": "win32", "pattern": "HP OMEN*",                           "examples": ["HP OMEN Gaming Hub Background Service"] },
+    { "name": "HP Support Assistant",                  "type": "appx",  "pattern": "AD2F1837.HPSupportAssistant*",       "examples": ["AD2F1837.HPSupportAssistant"] },
+    { "name": "HP Support Assistant",                  "type": "win32", "pattern": "HP Support Assistant*",              "examples": ["HP Support Assistant"] },
+    { "name": "HP System Event Utility",               "type": "appx",  "pattern": "*HPSystemEventUtility*",             "examples": ["AD2F1837.HPSystemEventUtilityHost"] },
+    { "name": "HP System Event Utility",               "type": "win32", "pattern": "HP System Event Utility*",           "examples": ["HP System Event Utility"] },
+    { "name": "HP PC Hardware Diagnostics",            "type": "appx",  "pattern": "AD2F1837.HPPCHardwareDiagnostics*",  "examples": ["AD2F1837.HPPCHardwareDiagnosticsWindows"] },
+    { "name": "HP PC Hardware Diagnostics",            "type": "win32", "pattern": "HP PC Hardware Diagnostics*",        "examples": ["HP PC Hardware Diagnostics Windows"] },
+    { "name": "HP System Information",                 "type": "appx",  "pattern": "AD2F1837.HPSystemInformation*",      "examples": ["AD2F1837.HPSystemInformation"] },
+    { "name": "Pilotes HP",                            "type": "win32", "pattern": "HP*Driver*",                         "examples": ["HP Hotkey Driver", "HP Wireless Button Driver"] },
+    { "name": "Services HP",                           "type": "win32", "pattern": "HP*Service*",                        "examples": ["HP Application Enabling Services", "HP Insights Analytics Service"] },
+    { "name": "HP Hotkey / touches",                   "type": "win32", "pattern": "HP Hotkey*",                         "examples": ["HP Hotkey Support"] },
+    { "name": "HP Audio",                              "type": "appx",  "pattern": "*HPAudioControl*",                   "examples": ["RealtekSemiconductorCorp.HPAudioControl"] },
+    { "name": "HP Audio",                              "type": "win32", "pattern": "HP Audio*",                          "examples": ["HP Audio Switch"] },
+    { "name": "Audio Realtek",                         "type": "appx",  "pattern": "RealtekSemiconductorCorp.*",         "examples": ["RealtekSemiconductorCorp.RealtekAudioControl"] },
+    { "name": "Audio Realtek",                         "type": "win32", "pattern": "Realtek*",                           "examples": ["Realtek High Definition Audio Driver"] },
+    { "name": "DTS:X (audio)",                         "type": "appx",  "pattern": "DTSInc.*",                           "examples": ["DTSInc.DTSXUltra"] },
+    { "name": "Intel (pilotes, chipset)",              "type": "appx",  "pattern": "AppUp.Intel*",                       "examples": ["AppUp.IntelGraphicsExperience"] },
+    { "name": "Intel (pilotes, chipset)",              "type": "win32", "pattern": "Intel*",                             "examples": ["Intel(R) Chipset Device Software"] },
+    { "name": "NVIDIA",                                "type": "appx",  "pattern": "NVIDIACorp.*",                       "examples": ["NVIDIACorp.NVIDIAControlPanel"] },
+    { "name": "NVIDIA",                                "type": "win32", "pattern": "NVIDIA*",                            "examples": ["NVIDIA Graphics Driver 581.57", "NVIDIA App 11.0.5.420"] },
+    { "name": "Xbox",                                  "type": "appx",  "pattern": "Microsoft.Xbox*",                    "examples": ["Microsoft.XboxIdentityProvider", "Microsoft.Xbox.TCUI", "Microsoft.XboxSpeechToTextOverlay"] },
+    { "name": "Xbox (application)",                    "type": "appx",  "pattern": "Microsoft.GamingApp*",               "examples": ["Microsoft.GamingApp"] },
+    { "name": "Xbox (Gaming Services)",                "type": "appx",  "pattern": "Microsoft.GamingServices*",          "examples": ["Microsoft.GamingServices"] },
+    { "name": "Game Bar",                              "type": "appx",  "pattern": "Microsoft.XboxGamingOverlay*",       "examples": ["Microsoft.XboxGamingOverlay"] },
+    { "name": "Defender / Securite Windows",           "type": "appx",  "pattern": "Microsoft.SecHealthUI*",             "examples": ["Microsoft.SecHealthUI"] },
+    { "name": "Defender / Securite Windows",           "type": "win32", "pattern": "*Defender*",                         "examples": ["Microsoft Defender Antivirus"] },
+    { "name": "winget (App Installer)",                "type": "appx",  "pattern": "Microsoft.DesktopAppInstaller*",     "examples": ["Microsoft.DesktopAppInstaller"] },
+    { "name": "Microsoft Store",                       "type": "appx",  "pattern": "Microsoft.WindowsStore*",            "examples": ["Microsoft.WindowsStore"] },
+    { "name": "OneDrive",                              "type": "win32", "pattern": "Microsoft OneDrive*",                "examples": ["Microsoft OneDrive"] }
+  ],
+  "remove": [
+    {
+      "name": "McAfee (antivirus d'essai)", "type": "win32", "pattern": "McAfee*",
+      "examples": ["McAfee LiveSafe", "McAfee Total Protection", "McAfee WebAdvisor", "McAfee Security Scan Plus"],
+      "postCheck": "defender",
+      "knownFlags": [
+        { "exe": "Uninstaller.exe", "args": "/s" },
+        { "exe": "uninstall.exe",   "args": "/S" }
+      ],
+      "manualHint": "Pas de desinstallation silencieuse connue : Parametres > Applications > McAfee > Desinstaller, ou l'outil officiel MCPR (McAfee Consumer Product Removal)."
+    },
+    { "name": "McAfee (appli Store)",        "type": "appx",  "pattern": "5A894077.McAfee*",                "examples": ["5A894077.McAfeeSecurity"], "postCheck": "defender" },
+    { "name": "ExpressVPN (essai)",          "type": "win32", "pattern": "ExpressVPN*",                     "examples": ["ExpressVPN"] },
+    { "name": "ExpressVPN (essai)",          "type": "appx",  "pattern": "*ExpressVPN*",                    "examples": ["ExpressVPN.ExpressVPN"] },
+    { "name": "Dropbox (promo OEM)",         "type": "appx",  "pattern": "C27EB4BA.DropboxOEM*",            "examples": ["C27EB4BA.DropboxOEM"] },
+    { "name": "Dropbox (promo OEM)",         "type": "win32", "pattern": "Dropbox*Promotion*",              "examples": ["Dropbox Promotion"] },
+    { "name": "Booking.com (promo)",         "type": "appx",  "pattern": "*Booking.com*",                   "examples": ["PricelinePartnerNetwork.Booking.comBigsavingsonhot"] },
+    { "name": "Booking.com (promo)",         "type": "win32", "pattern": "Booking.com*",                    "examples": ["Booking.com"] },
+    { "name": "WildTangent Games (essais)",  "type": "appx",  "pattern": "WildTangentGames.*",              "examples": ["WildTangentGames.63435CFB65F55"] },
+    { "name": "WildTangent Games (essais)",  "type": "win32", "pattern": "WildTangent*",                    "examples": ["WildTangent Games App (HP Games)"] },
+    { "name": "Amazon (promo)",              "type": "appx",  "pattern": "Amazon.com.Amazon*",              "examples": ["Amazon.com.Amazon"] },
+    { "name": "Prime Video (promo)",         "type": "appx",  "pattern": "AmazonVideo.PrimeVideo*",         "examples": ["AmazonVideo.PrimeVideo"] },
+    { "name": "Disney+ (promo)",             "type": "appx",  "pattern": "Disney.37853FC22B2CE*",           "examples": ["Disney.37853FC22B2CE"] },
+    { "name": "TikTok (promo)",              "type": "appx",  "pattern": "BytedancePte.Ltd.TikTok*",        "examples": ["BytedancePte.Ltd.TikTok"] },
+    { "name": "Facebook (promo)",            "type": "appx",  "pattern": "Facebook.Facebook*",              "examples": ["Facebook.Facebook"] },
+    { "name": "Instagram (promo)",           "type": "appx",  "pattern": "Facebook.Instagram*",             "examples": ["Facebook.InstagramBeta"] },
+    { "name": "Candy Crush & co (promo)",    "type": "appx",  "pattern": "king.com.*",                      "examples": ["king.com.CandyCrushSaga", "king.com.CandyCrushSodaSaga"] },
+    { "name": "LinkedIn (promo)",            "type": "appx",  "pattern": "7EE7776C.LinkedInforWindows*",    "examples": ["7EE7776C.LinkedInforWindows"] }
+  ],
+  "confirm": [
+    { "name": "myHP",     "type": "appx", "pattern": "AD2F1837.myHP*",           "examples": ["AD2F1837.myHP"],            "why": "hub promo/support HP, pas critique ; ne se reinstalle pas facilement" },
+    { "name": "HP Smart", "type": "appx", "pattern": "AD2F1837.HPPrinterControl*", "examples": ["AD2F1837.HPPrinterControl"], "why": "appli imprimante HP : inutile sans imprimante HP" },
+    { "name": "Spotify",  "type": "appx", "pattern": "SpotifyAB.SpotifyMusic*",  "examples": ["SpotifyAB.SpotifyMusic"],   "why": "le stub preinstalle est le MEME paquet que le vrai Spotify du Store : a confirmer pour ne pas retirer un Spotify utilise" }
+  ]
+}

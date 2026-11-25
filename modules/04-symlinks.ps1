@@ -53,6 +53,13 @@ $links = @(
        Target = "$script:ConfigsRoot\Claude-Code\.claude\plugins" }
     @{ Link = "$env:USERPROFILE\.claude.json"
        Target = "$script:ConfigsRoot\Claude-Code\.claude.json" }
+    # Skills / commandes / instructions perso (sauvegardés par backup-configs avec chemins canoniques)
+    @{ Link = "$env:USERPROFILE\.claude\skills"
+       Target = "$script:ConfigsRoot\Claude-Code\.claude\skills" }
+    @{ Link = "$env:USERPROFILE\.claude\commands"
+       Target = "$script:ConfigsRoot\Claude-Code\.claude\commands" }
+    @{ Link = "$env:USERPROFILE\.claude\CLAUDE.md"
+       Target = "$script:ConfigsRoot\Claude-Code\.claude\CLAUDE.md" }
 
     # Claude Desktop (config MCP)
     @{ Link = "$env:APPDATA\Claude\claude_desktop_config.json"

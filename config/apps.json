@@ -1,5 +1,5 @@
 {
-  "_comment": "IDs winget vérifiés (winget show --id <id> -e). Champ 'category' : core|dev|tools|games|media. Le module 01 installe tout par défaut ; filtrable via -Only apps + env RESETPACK_APP_CATS (ex: 'core,dev').",
+  "_comment": "IDs winget vérifiés (winget show --id <id> -e). Champ 'category' : core|dev|tools|games|media. Le module 01 installe tout par défaut ; filtrable via -Only apps + env RESETPACK_APP_CATS (ex: 'core,dev'). Champ optionnel 'profiles' : l'app n'est installée QUE sur ces profils machine (omen|exodius).",
   "apps": [
     { "id": "Brave.Brave",                   "name": "Brave Browser",       "category": "core" },
     { "id": "7zip.7zip",                      "name": "7-Zip",               "category": "core" },
@@ -19,6 +19,7 @@
     { "id": "Microsoft.VisualStudioCode",     "name": "VSCode",              "category": "dev" },
     { "id": "OpenJS.NodeJS.LTS",              "name": "Node.js LTS",         "category": "dev" },
     { "id": "Python.Python.3.12",             "name": "Python 3.12",         "category": "dev" },
+    { "id": "astral-sh.uv",                   "name": "uv (Python)",         "category": "dev" },
     { "id": "Docker.DockerDesktop",           "name": "Docker Desktop",      "category": "dev" },
     { "id": "Microsoft.VisualStudio.2022.Community", "name": "Visual Studio 2022", "category": "dev" },
     { "id": "EclipseAdoptium.Temurin.21.JDK", "name": "Java 21 (Temurin)",   "category": "dev" },
@@ -32,6 +33,11 @@
     { "id": "CrystalDewWorld.CrystalDiskInfo","name": "CrystalDiskInfo",     "category": "tools" },
     { "id": "Balena.Etcher",                  "name": "balenaEtcher",        "category": "tools" },
     { "id": "Parsec.Parsec",                  "name": "Parsec",              "category": "tools" },
+    { "id": "LizardByte.Sunshine",            "name": "Sunshine (hôte streaming)", "category": "tools", "profiles": ["omen"] },
+    { "id": "MoonlightGameStreamingProject.Moonlight", "name": "Moonlight (client streaming)", "category": "tools", "profiles": ["exodius"] },
+    { "id": "XP8CLZL93F5Z4P",                 "name": "NVIDIA App",          "category": "tools", "profiles": ["omen"],
+      "extraArgs": ["--source", "msstore"] },
+    { "id": "LibreHardwareMonitor.LibreHardwareMonitor", "name": "LibreHardwareMonitor (températures)", "category": "tools", "profiles": ["omen"] },
     { "id": "cjpais.Handy",                   "name": "Handy (dictée)",      "category": "tools" },
     { "id": "Philips.HueSync",                "name": "Philips Hue Sync",    "category": "tools" },
     { "id": "TheDocumentFoundation.LibreOffice", "name": "LibreOffice",      "category": "tools" },
@@ -41,8 +47,8 @@
     { "id": "OBSProject.OBSStudio",           "name": "OBS Studio",          "category": "media" },
 
     { "id": "Valve.Steam",                    "name": "Steam",               "category": "games" },
-    { "id": "RiotGames.LeagueOfLegends.EUW",  "name": "League of Legends (EUW)", "category": "games" },
-    { "id": "RiotGames.Valorant.EU",          "name": "Valorant (EU)",       "category": "games" },
+    { "id": "RiotGames.LeagueOfLegends.EUW",  "name": "League of Legends (EUW)", "category": "games", "profiles": ["exodius"] },
+    { "id": "RiotGames.Valorant.EU",          "name": "Valorant (EU)",       "category": "games", "profiles": ["exodius"] },
     { "id": "GOG.Galaxy",                     "name": "GOG Galaxy",          "category": "games" },
     { "id": "EpicGames.EpicGamesLauncher",    "name": "Epic Games Launcher", "category": "games" },
     { "id": "Overwolf.CurseForge",            "name": "CurseForge",          "category": "games" },
@@ -52,6 +58,9 @@
   "_manual": [
     "Microsoft 365 Apps : install via https://account.microsoft.com (winget Microsoft.Office veut un XML ODT).",
     "Ankama Launcher (Dofus) : pas d'ID winget stable -> installer depuis ankama.com.",
-    "SetUserFTA : remplacé par PS-SFTA, téléchargé par le module 07 (pas un paquet winget)."
+    "SetUserFTA : remplacé par PS-SFTA, téléchargé par le module 07 (pas un paquet winget).",
+    "OMEN - Riot (LoL/Valorant) : installer via le client Riot dans D:\\Games\\Riot (winget ignore le chemin) ; Vanguard reste sur C:.",
+    "OMEN - Ollama (option, voie DL native) : winget install --id Ollama.Ollama -e  (OLLAMA_MODELS = C:\\ML\\ollama, posé par 12-storage).",
+    "OMEN - NirSoft MultiMonitorTool : pas sur winget, téléchargé par le module 17-remote dans C:\\Tools."
   ]
 }

@@ -17,6 +17,15 @@ if ($env:RESETPACK_APP_CATS) {
     Write-Warn "Filtre catégories: $($cats -join ', ') -> $($apps.Count) apps"
 }
 
+# Filtre par profil machine : une app avec 'profiles' n'est installée que sur ces profils
+# (ex. Sunshine = hôte OMEN, Moonlight = client EXODIUS, Riot hors OMEN car installé via son client sur D:).
+$machine = Get-ResetProfile
+$before = @($apps).Count
+$apps = @($apps | Where-Object {
+    -not ($_.PSObject.Properties.Name -contains 'profiles') -or -not $_.profiles -or ($machine -and @($_.profiles) -contains $machine)
+})
+if ($before -ne $apps.Count) { Write-Step "Profil '$machine' : $($before - $apps.Count) app(s) réservée(s) à un autre profil ignorée(s)" }
+
 $failed = @()
 foreach ($app in $apps) {
     Write-Step "Install $($app.name) ($($app.id))"

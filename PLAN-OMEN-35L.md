@@ -5,7 +5,11 @@
 > **projets / dev / Claude Code / « deep » + beaucoup de jeu**.
 > Double SSD : **1 To HP (OS + taf)** + **Crucial P310 1 To (jeu)**.
 > Accès distant depuis **EXODIUS** en déplacement + réseau **10 GbE** local.
-> Pendant pour le pendant de l'audit EXODIUS → voir [AUDIT-RESET-2026.md](AUDIT-RESET-2026.md).
+> Pendant de l'audit EXODIUS → voir [AUDIT-RESET-2026.md](AUDIT-RESET-2026.md).
+>
+> **➡️ Le plan système complet (multi-agents, critiqué, vérifié dans le code) est dans
+> [SYSTEME-OMEN-35L.md](SYSTEME-OMEN-35L.md).** Ce document-ci garde les choix matériels ; en cas de divergence,
+> c'est SYSTEME qui fait foi.
 
 ---
 
@@ -95,7 +99,9 @@ On fera une **checklist de tri au 1er boot** (capture de la liste réelle avant/
   Docker/WSL ~120 Go, OneDrive jusqu'à **254 Go *logiques*** (cf. [audit EXODIUS](AUDIT-RESET-2026.md)). **Conseils** :
   garder OneDrive en **« Fichiers à la demande »** (ne pas tout hydrater → ~200 Go économisés) et **ne pas laisser
   tes dossiers de projets** (`node_modules`/`.venv`) se synchroniser dans OneDrive — le piège repéré dans l'audit
-  (bloat + fichiers « online-only » qui cassent les builds). Il reste alors ~400-500 Go pour les datasets.
+  (bloat + fichiers « online-only » qui cassent les builds). ~~Il reste alors ~400-500 Go pour les datasets.~~
+  **Corrigé** : en comptant pagefile, outils dev, caches et OneDrive hydraté, c'est plutôt **~100-250 Go** réalistes
+  → budget détaillé dans [SYSTEME-OMEN-35L.md §2.3](SYSTEME-OMEN-35L.md).
 
 ### 3.1 — Garder tes projets en sécurité **sans** les alourdir dans OneDrive
 
@@ -226,6 +232,9 @@ pour retrouver ton environnement :
 - **RAM 32 Go** au départ, 64 Go plus tard · **datasets + OneDrive sur `C:`** (Fichiers à la demande)
 
 ### À faire à l'arrivée du PC (checklist)
+
+> ⚠️ **Remplacée par [SYSTEME-OMEN-35L.md §10](SYSTEME-OMEN-35L.md)**, plus complète : recovery HP, clé BitLocker,
+> capture de l'état avant tri, SSD externe, test d'acceptation, test remote réel. Gardée ici pour l'historique.
 
 1. **1er boot** : capturer la liste des apps, puis **trier le bloatware** (§2 — virer McAfee & co, garder HP Support Assistant + OMEN Gaming Hub).
 2. **Mises à jour** : Windows Update + BIOS/pilotes via HP Support Assistant + **NVIDIA App**.

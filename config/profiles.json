@@ -1,0 +1,17 @@
+{
+  "_comment": "Profils de reset.ps1 (-Profile). 'modules' = liste ET ordre imposes (cles de reset.ps1). 'forbidden' = modules jamais executes avec ce profil (verrouille par Pester). 'appCats' = categories d'apps.json installees. Cf. SYSTEME-OMEN-35L.md §4.",
+  "profiles": {
+    "omen": {
+      "description": "HP OMEN 35L : image usine HP conservee (pas de reset), tri bloatware cible, dev + deep learning + jeu + acces distant.",
+      "modules": ["hp-triage", "apps", "dev-setup", "symlinks", "vscode", "storage", "code", "tweaks", "defaults", "gaming", "games", "ml", "remote", "scheduled", "finalize"],
+      "forbidden": ["debloat", "drivers"],
+      "appCats": ["core", "dev", "tools", "media", "games"]
+    },
+    "exodius": {
+      "description": "GIGABYTE AORUS 15-X9 apres un reset Windows complet (comportement historique du pack).",
+      "modules": ["apps", "drivers", "dev-setup", "symlinks", "vscode", "tweaks", "defaults", "debloat", "games", "scheduled", "storage", "code", "remote", "finalize"],
+      "forbidden": ["hp-triage"],
+      "appCats": ["core", "dev", "tools", "media", "games"]
+    }
+  }
+}

@@ -221,6 +221,135 @@ function Install-NerdFont {
     }
 }
 
+# ============================================================================
+# Profil machine + disposition du stockage (config/storage-layout.json)
+# ============================================================================
+# Profil : 'omen' | 'exodius'. Posé par reset.ps1 -Profile (RESETPACK_PROFILE), sinon détecté.
+function Get-ResetProfile {
+    if ($env:RESETPACK_PROFILE) { return $env:RESETPACK_PROFILE.ToLower() }
+    $model = ''
+    try { $model = "$((Get-CimInstance Win32_ComputerSystem -ErrorAction Stop).Model)" } catch { Write-Verbose "Win32_ComputerSystem indisponible" }
+    if ($model -match 'OMEN') { return 'omen' }
+    if ($model -match 'AORUS' -or $env:COMPUTERNAME -eq 'EXODIUS') { return 'exodius' }
+    return $null
+}
+
+function Get-ResetProfileDefinition {
+    # Définition d'un profil de reset.ps1 (liste/ordre des modules, interdits, catégories d'apps).
+    param([Parameter(Mandatory)][string]$Name)
+    $all = Get-Content (Join-Path $script:Root 'config\profiles.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $p = $all.profiles.$Name
+    if (-not $p) { throw "Profil '$Name' absent de config\profiles.json" }
+    return $p
+}
+
+function Get-StorageLayout {
+    # Chemins du profil, jetons {OneDrive}/{UserProfile} résolus. SEULE source des chemins C:/D:/X:.
+    param([string]$Name)
+    if (-not $Name) { $Name = Get-ResetProfile }
+    if (-not $Name) { throw "Profil machine inconnu : lance reset.ps1 -Profile omen|exodius (ou pose RESETPACK_PROFILE)." }
+    $raw = Get-Content (Join-Path $script:Root 'config\storage-layout.json') -Raw -Encoding UTF8
+    # Injection échappée JSON (les chemins contiennent des '\')
+    $od = (ConvertTo-Json ([string]$script:OneDriveRoot)).Trim('"')
+    $up = (ConvertTo-Json ([string]$env:USERPROFILE)).Trim('"')
+    $layout = ($raw.Replace('{OneDrive}', $od).Replace('{UserProfile}', $up) | ConvertFrom-Json).profiles.$Name
+    if (-not $layout) { throw "Profil '$Name' absent de config\storage-layout.json" }
+    $layout | Add-Member -NotePropertyName Name -NotePropertyValue $Name -Force
+    return $layout
+}
+
+function Get-ProjetsRoots {
+    # Toutes les racines de projets connues (PROJETS_CODE + layout + historiques), existantes, sans doublon.
+    # Utilisé par backup-secrets / pre-reset-check / backup-bundles : un projet déplacé reste couvert.
+    $cands = @($env:PROJETS_CODE, [Environment]::GetEnvironmentVariable('PROJETS_CODE', 'User'))
+    try {
+        $l = Get-StorageLayout
+        $cands += $l.projetsCode
+        $cands += @($l.legacyProjetsRoots)
+    } catch { Write-Verbose "layout indisponible : $($_.Exception.Message)" }
+    $cands += (Join-Path $script:OneDriveRoot 'Documents\03_Projets_Code')
+    $seen = @{}
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($r in $cands) {
+        if (-not $r -or -not (Test-Path $r)) { continue }
+        # Une jonction (EXODIUS : C:\Dev\03_Projets_Code -> OneDrive) = le même dossier : dédoublonner sur la cible.
+        $real = $r.TrimEnd('\')
+        $item = Get-Item -LiteralPath $real -Force -ErrorAction SilentlyContinue
+        if ($item -and $item.LinkType -in @('Junction', 'SymbolicLink')) { $real = "$(@($item.Target)[0])".TrimEnd('\') }
+        $k = $real.ToLower()
+        if ($seen.ContainsKey($k)) { continue }
+        $seen[$k] = $true
+        $out.Add($r.TrimEnd('\'))
+    }
+    # Émission normale (pas `return , $tableau`) : @(Get-ProjetsRoots) et foreach donnent bien N éléments.
+    $out.ToArray()
+}
+
+function Find-GitRepos {
+    # Dépôts git sous $Root (profondeur max), sans descendre DANS un dépôt ni dans les dossiers lourds.
+    # NB : les dossiers OneDrive sont des ReparsePoint (placeholders) -> on n'exclut que les vrais liens.
+    param([Parameter(Mandatory)][string]$Root, [int]$MaxDepth = 3)
+    $skip = @('node_modules', '.venv', 'venv', '__pycache__', '.git', 'dist', 'build', '.next', 'target', '.cache')
+    $out = New-Object System.Collections.Generic.List[string]
+    if (-not (Test-Path -LiteralPath $Root)) { return }
+    $queue = New-Object System.Collections.Queue
+    $queue.Enqueue(@($Root.TrimEnd('\'), 0))
+    while ($queue.Count -gt 0) {
+        $cur = $queue.Dequeue()
+        $dir = $cur[0]; $depth = $cur[1]
+        if (Test-Path -LiteralPath (Join-Path $dir '.git')) { $out.Add($dir); continue }
+        if ($depth -ge $MaxDepth) { continue }
+        Get-ChildItem -LiteralPath $dir -Directory -Force -ErrorAction SilentlyContinue |
+            Where-Object { $skip -notcontains $_.Name -and -not $_.LinkType } |
+            ForEach-Object { $queue.Enqueue(@($_.FullName, ($depth + 1))) }
+    }
+    $out.ToArray()
+}
+
+# Chemin CANONIQUE des projets, identique sur toutes les machines (dossier réel sur l'OMEN,
+# jonction vers OneDrive sur EXODIUS). Cf. storage-layout.json et migrate-projets.ps1.
+$script:CanonicalProjets = 'C:\Dev\03_Projets_Code'
+
+function ConvertTo-CanonicalProjetsPath {
+    # Réécrit tout ancien chemin <X>:\Users\<qui>\OneDrive\Documents\03_Projets_Code vers C:\Dev\03_Projets_Code,
+    # en CONSERVANT le style de séparateur (\ , \\ échappé JSON, /). Texte inchangé si rien ne matche.
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Text)
+    $rx = '(?i)[A-Z]:(\\\\|\\|/)Users\1[^\\/"\r\n]+?\1OneDrive\1Documents\1(?=03_Projets_Code)'
+    return [regex]::Replace($Text, $rx, { param($m) 'C:' + $m.Groups[1].Value + 'Dev' + $m.Groups[1].Value })
+}
+
+function ConvertTo-ClaudeProjectKey {
+    # Nom du dossier ~/.claude/projects/<clé> d'un chemin de projet (tout non-alphanumérique -> '-').
+    param([Parameter(Mandatory)][string]$Path)
+    return ($Path.TrimEnd('\') -replace '[^A-Za-z0-9]', '-')
+}
+
+function Set-UserEnvVar {
+    # Variable d'environnement User (persistante) + process courant. Idempotent, respecte le dry-run.
+    param([Parameter(Mandatory)][string]$Name, [AllowEmptyString()][string]$Value)
+    $cur = [Environment]::GetEnvironmentVariable($Name, 'User')
+    if ($cur -eq $Value) { Write-Ok "$Name déjà = $Value"; return }
+    if ($script:DryRun) { Write-Dry "env User $Name = '$Value' (actuel : '$cur')"; return }
+    [Environment]::SetEnvironmentVariable($Name, $(if ($Value) { $Value } else { $null }), 'User')
+    if ($Value) { Set-Item -Path "Env:$Name" -Value $Value } else { Remove-Item "Env:$Name" -ErrorAction SilentlyContinue }
+    Write-Ok "$Name = $Value"
+}
+
+function New-DirectorySafe {
+    # mkdir idempotent, respecte le dry-run. Renvoie $true si le dossier a été (ou serait) créé.
+    param([Parameter(Mandatory)][string]$Path)
+    if (Test-Path $Path) { return $false }
+    if ($script:DryRun) { Write-Dry "mkdir $Path"; return $true }
+    New-Item -ItemType Directory -Force -Path $Path | Out-Null
+    return $true
+}
+
+function Test-DriveReady {
+    # $true si la lettre (ex. 'D' ou 'D:') existe et est montée.
+    param([Parameter(Mandatory)][string]$Letter)
+    return (Test-Path ("{0}:\" -f $Letter.TrimEnd(':', '\')))
+}
+
 function Set-RegistryValue {
     param(
         [Parameter(Mandatory)][string]$Path,

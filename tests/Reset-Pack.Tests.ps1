@@ -48,6 +48,21 @@ Describe 'tous les .ps1 se parsent (AST)' {
     }
 }
 
+Describe 'modules/05-vscode.ps1 respecte le dry-run (régression : il installait des extensions en simulation)' {
+    BeforeAll {
+        $script:codeCalls = New-Object System.Collections.Generic.List[string]
+        # Faux CLI `code` : écrit sur stderr comme le vrai (warning node) et journalise les appels.
+        function global:code { $script:codeCalls.Add("$args"); [Console]::Error.WriteLine('(node) DeprecationWarning'); if ("$args" -eq '--list-extensions') { 'deja.installee' } }
+    }
+    AfterAll { Remove-Item function:\code -ErrorAction SilentlyContinue; $env:RESETPACK_DRYRUN = '' }
+    It "n'appelle jamais --install-extension en dry-run, même sous ErrorActionPreference=Stop" {
+        $env:RESETPACK_DRYRUN = '1'
+        $ErrorActionPreference = 'Stop'
+        { . "$Repo\modules\05-vscode.ps1" } | Should -Not -Throw
+        @($script:codeCalls | Where-Object { $_ -match '--install-extension' }).Count | Should -Be 0
+    }
+}
+
 Describe 'modules/10-scheduled.ps1 (mocké, aucune tâche réelle créée)' {
     BeforeAll { . "$Repo\modules\00-helpers.ps1" }
     BeforeEach {
@@ -60,11 +75,25 @@ Describe 'modules/10-scheduled.ps1 (mocké, aucune tâche réelle créée)' {
         Mock Set-ItemProperty       { }
         Mock Remove-ItemProperty    { }
     }
-    It 'enregistre exactement 3 tâches planifiées' {
+    AfterEach { $env:RESETPACK_PROFILE = $null }
+    It 'enregistre 4 tâches hors OMEN (winget, clair, sombre, bundles)' {
+        $env:RESETPACK_PROFILE = 'exodius'
         . "$Repo\modules\10-scheduled.ps1"
-        Should -Invoke Register-ScheduledTask -Times 3 -Exactly
+        Should -Invoke Register-ScheduledTask -Times 4 -Exactly
+    }
+    It "enregistre 6 tâches sur l'OMEN (+ purge Docker légère + log thermique)" {
+        $env:RESETPACK_PROFILE = 'omen'
+        . "$Repo\modules\10-scheduled.ps1"
+        Should -Invoke Register-ScheduledTask -Times 6 -Exactly
+        Should -Invoke Register-ScheduledTask -ParameterFilter { $TaskName -eq 'ResetPack-ThermalLog' } -Times 1
+    }
+    It 'crée la tâche de bundles git quotidienne' {
+        $env:RESETPACK_PROFILE = 'exodius'
+        . "$Repo\modules\10-scheduled.ps1"
+        Should -Invoke Register-ScheduledTask -ParameterFilter { $TaskName -eq 'ResetPack-CodeBundles' } -Times 1
     }
     It 'crée la tâche winget-upgrade hebdomadaire' {
+        $env:RESETPACK_PROFILE = 'exodius'
         . "$Repo\modules\10-scheduled.ps1"
         Should -Invoke Register-ScheduledTask -ParameterFilter { $TaskName -eq 'ResetPack-WingetUpgrade' } -Times 1
     }

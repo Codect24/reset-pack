@@ -3,10 +3,13 @@
 . "$PSScriptRoot\modules\00-helpers.ps1"
 Write-Banner "PRE-RESET CHECK (lecture seule)"
 
-$codeRoot = Join-Path $script:OneDriveRoot 'Documents\03_Projets_Code'
+# Toutes les racines connues (PROJETS_CODE + ancienne OneDrive) : un projet déplacé reste couvert.
+$roots = Get-ProjetsRoots
+if (-not $roots) { Write-Warn "03_Projets_Code introuvable (ni PROJETS_CODE ni OneDrive\Documents\03_Projets_Code)" }
 
+foreach ($codeRoot in $roots) {
 # 1. Dépôts git : working tree sale / commits non poussés / pas de remote
-Write-Banner "1. Dépôts git à risque"
+Write-Banner "1. Dépôts git à risque ($codeRoot)"
 if (Test-Path $codeRoot) {
     Get-ChildItem $codeRoot -Directory -Recurse -Depth 2 -Force -ErrorAction SilentlyContinue |
         Where-Object { Test-Path (Join-Path $_.FullName '.git') } | ForEach-Object {
@@ -21,7 +24,7 @@ if (Test-Path $codeRoot) {
             if ($flags) { Write-Warn ("{0}  [{1}]" -f $r.Replace($codeRoot, '...'), ($flags -join ', ')) }
         }
     Write-Ok "Scan dépôts terminé"
-} else { Write-Warn "03_Projets_Code introuvable ($codeRoot)" }
+}
 
 # 2. Fichiers sensibles / non versionnés (.env, clés)
 Write-Banner "2. .env / clés (à sauver HORS git via backup-secrets.ps1)"
@@ -30,6 +33,7 @@ if (Test-Path $codeRoot) {
         Where-Object { $_.FullName -notmatch '\\node_modules\\' } |
         Select-Object -First 60 | ForEach-Object { Write-Warn $_.FullName.Replace($codeRoot, '...') }
 }
+}  # fin foreach racine
 
 # 3. Clés SSH
 Write-Banner "3. Clés SSH (~/.ssh)"

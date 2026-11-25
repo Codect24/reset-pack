@@ -53,7 +53,10 @@ Try-Tweak "Game Bar - AppCapture off"              { Set-RegistryValue -Path $gb
 Try-Tweak "Game Bar - Nexus off"                   { Set-RegistryValue -Path $gb -Name 'UseNexusForGameBarEnabled' -Value 0 }
 Try-Tweak "Game Bar - Startup panel off"           { Set-RegistryValue -Path $gb -Name 'ShowStartupPanel' -Value 0 }
 Try-Tweak "Game Bar - Startup tip dismiss"         { Set-RegistryValue -Path $gb -Name 'GamePanelStartupTipIndex' -Value 3 }
-Try-Tweak "Game Bar - AutoGameMode off"            { Set-RegistryValue -Path $gb -Name 'AutoGameModeEnabled' -Value 0 }
+# Sur l'OMEN (PC de jeu), le Game Mode reste ON : c'est 16-gaming qui le gère. Sinon un `-Only tweaks` l'éteindrait.
+if ((Get-ResetProfile) -ne 'omen') {
+    Try-Tweak "Game Bar - AutoGameMode off"        { Set-RegistryValue -Path $gb -Name 'AutoGameModeEnabled' -Value 0 }
+} else { Write-Step "Game Mode : laissé à 16-gaming (profil omen)" }
 
 # === RESTART EXPLORER pour appliquer ===
 Try-Tweak "Restart explorer.exe" {

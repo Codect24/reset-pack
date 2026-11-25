@@ -5,7 +5,10 @@ param(
     [string[]]$Only,        # ne lancer que ces modules (ex: -Only apps,tweaks)
     [switch]$SkipReboot,
     [switch]$DryRun,        # simulation : aucune modification système (installs/reg/tâches mockés)
-    [switch]$Fresh          # ignore le fichier .state : rejoue tous les modules
+    [switch]$Fresh,         # ignore le fichier .state : rejoue tous les modules
+    # Profil machine (config/profiles.json) : impose la liste ET l'ordre des modules.
+    # Nom de variable != $PROFILE (variable automatique) ; on garde -Profile comme nom d'usage.
+    [Alias('Profile')][ValidateSet('omen', 'exodius')][string]$MachineProfile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +26,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     if ($SkipReboot) { $cmd += " -SkipReboot" }
     if ($DryRun)     { $cmd += " -DryRun" }
     if ($Fresh)      { $cmd += " -Fresh" }
+    if ($MachineProfile) { $cmd += " -Profile $MachineProfile" }
     Start-Process powershell -Verb RunAs -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $cmd)
     exit
 }
@@ -30,8 +34,18 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # --- Flags visibles par les modules enfants (lus dans 00-helpers) ---
 $env:RESETPACK_DRYRUN = if ($DryRun) { '1' } else { '' }
 $env:RESETPACK_AUTO   = if ($Auto)   { '1' } else { '' }
+if ($MachineProfile) { $env:RESETPACK_PROFILE = $MachineProfile }
 
 . "$Root\modules\00-helpers.ps1"
+
+# --- Profil : liste/ordre imposés + modules interdits + catégories d'apps ---
+$ProfileDef = $null
+if ($MachineProfile) {
+    $ProfileDef = Get-ResetProfileDefinition -Name $MachineProfile
+    $bad = @($Only | Where-Object { $ProfileDef.forbidden -contains $_ })
+    if ($bad) { throw "Module(s) interdit(s) avec le profil ${MachineProfile} : $($bad -join ', ')" }
+    if (-not $env:RESETPACK_APP_CATS) { $env:RESETPACK_APP_CATS = ($ProfileDef.appCats -join ',') }
+}
 
 # --- Log horodaté ---
 $LogDir  = Join-Path $Root 'logs'
@@ -41,6 +55,7 @@ try { Start-Transcript -Path $LogFile | Out-Null } catch {}
 
 Write-Banner "RESET PACK"
 Write-Host "Mode: $(if ($Auto) {'AUTO'} else {'INTERACTIF'})$(if ($DryRun) {' + DRY-RUN'} else {''})" -ForegroundColor Cyan
+Write-Host "Profil     : $(if ($MachineProfile) { $MachineProfile } else { '(aucun : liste historique)' })" -ForegroundColor Cyan
 Write-Host "OneDrive   : $script:OneDriveRoot" -ForegroundColor DarkGray
 Write-Host "Configs    : $script:ConfigsRoot" -ForegroundColor DarkGray
 Write-Host "Log        : $LogFile" -ForegroundColor DarkGray
@@ -62,7 +77,8 @@ if (-not $DryRun) {
     }
 }
 
-$modules = @(
+# Catalogue : TOUS les modules connus, dans l'ordre historique (utilisé sans -Profile).
+$catalog = @(
     @{ Key='apps';        File='01-apps.ps1';        Desc='Installer les apps (winget)' }
     @{ Key='drivers';     File='02-drivers.ps1';     Desc='Drivers (Nvidia + SDIO)' }
     @{ Key='dev-setup';   File='03-dev-setup.ps1';   Desc='WSL2, long paths, Git, gh auth' }
@@ -72,12 +88,39 @@ $modules = @(
     @{ Key='defaults';    File='07-defaults.ps1';    Desc='Apps par défaut (Brave, VLC)' }
     @{ Key='debloat';     File='08-debloat.ps1';     Desc='Virer Cortana + apps préinstallées' }
     @{ Key='games';       File='09-games.ps1';       Desc='Symlinks sauvegardes jeux' }
-    @{ Key='scheduled';   File='10-scheduled.ps1';   Desc='Tâches planifiées (upgrade hebdo, dark mode)' }
-    @{ Key='storage';     File='12-storage.ps1';     Desc='Config disque D: (Docker/WSL/HF/Steam)' }
+    @{ Key='scheduled';   File='10-scheduled.ps1';   Desc='Tâches planifiées (upgrade, bundles, dark mode)' }
+    @{ Key='storage';     File='12-storage.ps1';     Desc='Stockage C:/D: selon le layout du profil' }
+    @{ Key='code';        File='13-code.ps1';        Desc='Projets : PROJETS_CODE, gitignore global, garde-fous' }
+    @{ Key='ml';          File='14-ml.ps1';          Desc='Deep learning : .wslconfig, WSL ML, smoke-test GPU' }
+    @{ Key='hp-triage';   File='15-hp-triage.ps1';   Desc='Capture + tri du bloatware HP (liste blanche)' }
+    @{ Key='gaming';      File='16-gaming.ps1';      Desc='Jeu : launchers sur D:, Game Mode, OMEN Hub muselé' }
+    @{ Key='remote';      File='17-remote.ps1';      Desc='Accès distant : Tailscale, Sunshine, mono-écran' }
     @{ Key='finalize';    File='11-finalize.ps1';    Desc='Storage Sense, pin taskbar, Brave sync' }
 )
+# Sans profil : liste historique (les nouveaux modules ne tournent que via -Profile ou -Only).
+$legacyKeys = @('apps','drivers','dev-setup','symlinks','vscode','tweaks','defaults','debloat','games','scheduled','storage','finalize')
 
-if ($Only) { $modules = $modules | Where-Object { $Only -contains $_.Key } }
+if ($ProfileDef) {
+    $modules = foreach ($k in $ProfileDef.modules) {
+        $m = $catalog | Where-Object { $_.Key -eq $k }
+        if (-not $m) { throw "Profil ${MachineProfile} : module inconnu '$k'" }
+        $m
+    }
+} elseif ($Only) {
+    $modules = $catalog
+} else {
+    $modules = $catalog | Where-Object { $legacyKeys -contains $_.Key }
+}
+if ($Only) {
+    $unknown = @($Only | Where-Object { -not ($catalog.Key -contains $_) })
+    if ($unknown) { throw "Module(s) inconnu(s) : $($unknown -join ', ')" }
+    $modules = $modules | Where-Object { $Only -contains $_.Key }
+}
+$modules = @($modules)
+foreach ($m in $modules) {
+    if (-not (Test-Path "$Root\modules\$($m.File)")) { throw "Fichier module manquant : modules\$($m.File)" }
+}
+Write-Host "Modules    : $(($modules | ForEach-Object { $_.Key }) -join ' > ')" -ForegroundColor DarkGray
 
 # --- Reprise (.state) : modules déjà faits lors d'un run précédent ---
 $StateFile = Join-Path $Root '.state'

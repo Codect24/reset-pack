@@ -1,0 +1,3 @@
+# Scripts bash exécutés dans WSL : TOUJOURS en LF (un CRLF casse bash : $'\r': command not found),
+# même si Git for Windows est en core.autocrlf=true.
+*.sh text eol=lf

@@ -1,0 +1,99 @@
+{
+  "_comment": "SOURCE DE VERITE UNIQUE des chemins, par profil machine (cf. SYSTEME-OMEN-35L.md §2). Lu par 00-helpers (Get-StorageLayout). Jetons : {OneDrive} = racine OneDrive reelle, {UserProfile} = %USERPROFILE%. Ne JAMAIS recopier ces chemins en dur dans un module : appeler Get-StorageLayout. projetsCode = chemin CANONIQUE des projets, IDENTIQUE sur toutes les machines (dossier reel sur l'OMEN, jonction sur EXODIUS) : c'est lui que referencent hooks Claude Code, serveurs MCP et skills. PROJETS_CODE est pose par le module 13-code.",
+  "profiles": {
+    "omen": {
+      "_comment": "HP OMEN 35L. C: (SSD HP) = OS + dev + Docker/WSL + DL (ecritures). D: (Crucial P310, QLC sans DRAM) = jeux + froid en lecture. X: = SSD externe USB4 (sauvegardes).",
+      "projetsCode": "C:\\Dev\\03_Projets_Code",
+      "legacyProjetsRoots": ["{OneDrive}\\Documents\\03_Projets_Code"],
+      "bundlesDir": "{OneDrive}\\Documents\\08_Logiciels\\CodeBundles",
+      "gamesDisk": { "letter": "D", "label": "Jeux", "modelMatch": "P310", "minSizeGB": 900, "maxSizeGB": 1100 },
+      "backupDrive": "X:",
+      "dirs": [
+        "C:\\Dev\\03_Projets_Code",
+        "C:\\ML\\hf",
+        "C:\\ML\\torch",
+        "C:\\ML\\ollama",
+        "C:\\ML\\datasets",
+        "C:\\ML\\runs",
+        "C:\\Caches\\pip",
+        "C:\\Caches\\npm",
+        "C:\\WSL",
+        "C:\\Tools",
+        "D:\\Games\\Steam",
+        "D:\\Games\\Epic",
+        "D:\\Games\\BattleNet",
+        "D:\\Games\\Riot",
+        "D:\\Games\\GOG",
+        "D:\\Games\\EA",
+        "D:\\Games\\Ubisoft",
+        "D:\\ISO",
+        "D:\\Captures",
+        "D:\\ML-cold"
+      ],
+      "env": {
+        "HF_HOME": "C:\\ML\\hf",
+        "TORCH_HOME": "C:\\ML\\torch",
+        "OLLAMA_MODELS": "C:\\ML\\ollama",
+        "PIP_CACHE_DIR": "C:\\Caches\\pip",
+        "NPM_CONFIG_CACHE": "C:\\Caches\\npm"
+      },
+      "wsl": {
+        "distro": "Ubuntu",
+        "location": "C:\\WSL\\Ubuntu",
+        "env": {
+          "HF_HOME": "$HOME/ml/hf",
+          "TORCH_HOME": "$HOME/ml/torch"
+        }
+      },
+      "launchers": {
+        "Steam": "D:\\Games\\Steam",
+        "Epic": "D:\\Games\\Epic",
+        "BattleNet": "D:\\Games\\BattleNet",
+        "Riot": "D:\\Games\\Riot",
+        "GOG": "D:\\Games\\GOG",
+        "EA": "D:\\Games\\EA",
+        "Ubisoft": "D:\\Games\\Ubisoft"
+      },
+      "captures": "D:\\Captures",
+      "mlCold": "D:\\ML-cold",
+      "mlDatasets": "C:\\ML\\datasets",
+      "mlRuns": "C:\\ML\\runs",
+      "tools": "C:\\Tools",
+      "removeEnv": []
+    },
+    "exodius": {
+      "_comment": "GIGABYTE AORUS 15-X9 (portable). Projets TOUJOURS physiquement dans OneDrive ; C:\\Dev\\03_Projets_Code y est une JONCTION (migrate-projets.ps1 -Mode Junction) pour que le chemin canonique soit le meme sur les 2 machines. Data lourde sur D:.",
+      "projetsCode": "C:\\Dev\\03_Projets_Code",
+      "projetsCodeJunctionTo": "{OneDrive}\\Documents\\03_Projets_Code",
+      "legacyProjetsRoots": ["{OneDrive}\\Documents\\03_Projets_Code"],
+      "bundlesDir": "{OneDrive}\\Documents\\08_Logiciels\\CodeBundles",
+      "gamesDisk": null,
+      "backupDrive": "X:",
+      "dirs": [
+        "D:\\Docker",
+        "D:\\WSL",
+        "D:\\ml\\huggingface",
+        "D:\\Archives",
+        "D:\\SteamLibrary",
+        "D:\\Code"
+      ],
+      "env": {
+        "HF_HOME": "D:\\ml\\huggingface"
+      },
+      "wsl": {
+        "distro": "Ubuntu",
+        "location": "D:\\WSL\\Ubuntu",
+        "env": {}
+      },
+      "launchers": {
+        "Steam": "D:\\SteamLibrary"
+      },
+      "captures": null,
+      "mlCold": null,
+      "mlDatasets": null,
+      "mlRuns": null,
+      "tools": null,
+      "removeEnv": []
+    }
+  }
+}

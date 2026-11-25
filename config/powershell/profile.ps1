@@ -19,10 +19,12 @@ function gco { git checkout $args }
 function code-here { code . }
 function explorer-here { explorer . }
 
-# Fast nav vers projets (OneDrive dynamique : marche même si déplacé sur D:)
+# Fast nav vers projets : PROJETS_CODE (posé par machine par le module 13-code, ex. C:\Dev\03_Projets_Code
+# sur l'OMEN), sinon l'ancien emplacement OneDrive.
 $OneDriveRoot = if ($env:OneDrive) { $env:OneDrive } else { "$env:USERPROFILE\OneDrive" }
-function proj { Set-Location "$OneDriveRoot\Documents\03_Projets_Code" }
-function reset-pack { Set-Location "$OneDriveRoot\Documents\03_Projets_Code\2026\Reset_pack" }
+$ProjetsCode  = if ($env:PROJETS_CODE) { $env:PROJETS_CODE } else { "$OneDriveRoot\Documents\03_Projets_Code" }
+function proj { Set-Location $ProjetsCode }
+function reset-pack { Set-Location (Join-Path $ProjetsCode '2026\Reset_pack') }
 
 # Prompt minimal avec git branch
 function prompt {
