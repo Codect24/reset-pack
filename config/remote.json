@@ -9,7 +9,8 @@
     "url": "https://www.nirsoft.net/utils/multimonitortool-x64.zip",
     "dir": "{Tools}\\MultiMonitorTool",
     "exe": "MultiMonitorTool.exe",
-    "requireSignature": true,
+    "requireSignature": false,
+    "_requireSignature": "NirSoft ne signe PAS MultiMonitorTool (Authenticode = NotSigned, constate sur l'OMEN le 2026-11-25) : exiger la signature bloquait l'installation. Integrite = telechargement HTTPS depuis nirsoft.net (site officiel). Remettre a true seulement si NirSoft se met a signer.",
     "ini": {
       "LoadConfigUseMonitorID": "1",
       "HideInactiveMonitors": "0"
